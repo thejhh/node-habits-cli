@@ -2,7 +2,8 @@
 var commands = {},
     basedir = process.env.HOME || __dirname,
     db = require('./db.js').open(basedir + '/.habits.json'),
-    foreach = require('snippets').foreach;
+    foreach = require('snippets').foreach,
+	rpad = require('snippets').rpad;
 
 /* Print duration */
 function duration(time) {
@@ -73,24 +74,45 @@ commands['do'] = commands.trigger;
 
 /* List habits */
 commands.list = function() {
-	console.log('Habit | Last time');
-	console.log('------+----------');
 	db.whenReady(function() {
+		var habits = [], key_size;
 		foreach(db.habits).each(function(habit) {
 			var last = new Date(),
 			    now = new Date(),
 			    msecs;
+			
+			if(key_size === undefined) {
+				key_size = habit.name.length;
+			} else if(habit.name.length > key_size) {
+				key_size = habit.name.length;
+			}
+			
 			if(habit.last) {
 				last.setTime(habit.last);
 				msecs = now.getTime() - last.getTime();
-			}
-			if(!habit.last) {
-				console.log(habit.name + ' | Never done before');
+				habits.push({'name':habit.name, 'last':habit.last, 'msecs':msecs});
 			} else {
-				console.log(habit.name + ' | ' + duration(msecs) + ' ago');
+				habits.push({'name':habit.name});
+			}
+		});
+		
+		habits.sort(function(a, b) {
+			var a_msecs = a.msecs || 0,
+			    b_msecs = b.msecs || 0;
+			return (a_msecs === b_msecs) ? 0 : ( (a_msecs < b_msecs) ? 1 : -1 ); 
+		});
+		
+		console.log(rpad('Habit', key_size, ' ') + ' | Last time');
+		console.log(rpad('', key_size, '-') + '-+----------');
+		foreach(habits).each(function(habit) {
+			if(!habit.msecs) {
+				console.log(rpad(habit.name, key_size, ' ') + ' | ');
+			} else {
+				console.log(rpad(habit.name, key_size, ' ') + ' | ' + duration(habit.msecs) + ' ago');
 			}
 		});
 	});
+	
 };
 
 /* */
