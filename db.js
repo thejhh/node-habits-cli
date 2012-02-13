@@ -57,7 +57,10 @@ Data.prototype.load = function(target) {
 Data.prototype.save = function(target, fn) {
 	var self = this,
 	    data = {},
-	    json_data;
+	    json_data,
+	    now = new Date(),
+	    target_bak,
+	    target_tmp;
 	
 	if(!target) {
 		fn('Target invalid: ' + target);
@@ -73,13 +76,49 @@ Data.prototype.save = function(target, fn) {
 		fn('Failed to parse data!');
 		return self;
 	}
+	
+	target_bak = target + '.bak.' + now.getTime();
+	target_tmp = target + '.tmp.' + now.getTime();
+	
 	//console.log('DEBUG: Writing to ' + target + ' data ' + json_data);
-	fs.writeFile(target, json_data, 'utf8', function (err) {
+	
+	// Save to temporary file
+	fs.writeFile(target_tmp, json_data, 'utf8', function (err) {
 		if(err) {
 			fn(err);
 			return;
 		}
-		fn();
+		path.exists(target, function(exists) {
+			if(exists) {
+				// Backup original file
+				fs.rename(target, target_bak, function(err) {
+					if(err) {
+						fn(err);
+						return;
+					}
+					
+					// Change temporary file as primary
+					fs.rename(target_tmp, target, function(err) {
+						if(err) {
+							fn(err);
+							return;
+						}
+						fn();
+					});
+				});
+				return;
+			}
+			
+			// Change temporary file as primary
+			fs.rename(target_tmp, target, function(err) {
+				if(err) {
+					fn(err);
+					return;
+				}
+				fn();
+			});
+			
+		});
 	});
 	return self;
 }
