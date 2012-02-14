@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-var commands = {},
+
+var commands = module.exports = {},
     basedir = process.env.HOME || __dirname,
     db = require('filedb').open(basedir + '/.habits.json'),
     foreach = require('snippets').foreach,
@@ -115,20 +116,6 @@ commands.list = function() {
 	
 };
 
-/* */
-(function() {
-	var optimist = require('optimist'),
-	    argv = optimist
-	    .usage('Usage: $0 COMMAND [arguments]')
-	    .argv,
-	    name = argv._.shift(),
-	    fn = commands[name];
-	if(fn && commands.hasOwnProperty(name) && (typeof fn === 'function')) {
-		commands[name].apply(commands, argv._);
-	} else {
-		console.error('Error: Unknown command: ' + name);
-		optimist.showHelp();
-	}
-})();
+require('./cli.js').run(commands);
 
 /* EOF */
