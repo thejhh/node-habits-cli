@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 var commands = {},
     basedir = process.env.HOME || __dirname,
-    db = require('./db.js').open(basedir + '/.habits.json'),
+    db = require('filedb').open(basedir + '/.habits.json'),
     foreach = require('snippets').foreach,
 	rpad = require('snippets').rpad;
 
